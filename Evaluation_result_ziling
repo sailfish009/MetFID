@@ -1,0 +1,121 @@
+import pybel
+import pickle
+from random import shuffle
+# Create your first MLP in Keras
+# from keras.models import Sequential
+# from keras.layers import Dense
+# from keras.layers import Dropout
+import numpy as np
+from statistics import mean
+import pubchempy
+import operator
+from scipy.stats import rankdata
+import csv
+
+
+#fix random seed for reproducibility
+np.random.seed(7)
+
+
+
+
+
+
+#load data
+
+
+
+with open('new_evaluation_pickle.p', 'rb') as handle:
+    eva = pickle.load(handle)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def tanimoto(candi,predi):
+	# print (candi)
+	predi = list(map(lambda x: int(x), predi))
+	# print (predi)
+
+	bothAB = 0
+	onlyA = 0
+	onlyB = 0
+	for i in range(0,len(candi)):
+		if candi[i] == 1 and predi[i] == 1:
+			bothAB += 1
+		elif candi[i] == 1 and predi[i] == 0:
+			onlyB += 1
+		elif predi[i] == 1 and candi[i] == 0:
+			onlyA += 1
+	score = bothAB/(onlyA+onlyB+bothAB)
+	return score
+
+
+
+
+def scoring1(candi,predicted):
+	count=0
+	for i in range(len(candi)):
+		if candi[i]==predicted[i]:
+			count+=1
+	return count/528
+
+
+
+print(len(eva.keys()))
+
+
+
+topk=1
+correct=0
+key_list=[]
+for key,value in eva.items():
+	if  value[3] in pnas_training:#use id for evaluation
+	#if key.split("-")[0] in pnas_training:
+		#intersection.append([key])
+		print(value[3])
+		key_list.append([key])
+		#print(value[3])
+		result=[[key],[list(value[-2])]]
+		candi_dit=value[-1]
+		for can,fp in candi_dit.items():
+			score=tanimoto(fp[0],value[-2])
+			#score=scoring1(fp[0],value[-2])
+			#fp[0]=[score]+fp[0]
+			fp[0]=score
+			candi_dit[can]=fp[0]
+		sorted_candidateList = sorted(candi_dit.items(), key=operator.itemgetter(1))
+		sorted_candidateList = [list(i) for i in sorted_candidateList]
+		accuracy_list= [-i[1] for i in sorted_candidateList]
+		rank_list = [int(i) for i in list(rankdata(accuracy_list))]
+		##################
+		if 1 not in rank_list:
+			min_value=min(rank_list)
+			for i in range(len(rank_list)):
+				if rank_list[i]==min_value:
+					rank_list[i]=1
+		##########			
+		for i in range(len(sorted_candidateList)):
+			sorted_candidateList[i][1]=rank_list[i]
+		identification_set=[]
+		for i in sorted_candidateList:
+			if i[1]<=topk:
+				identification_set.append(i[0].split("-")[0])
+		#the last step is to tell if the topk contains correct answer
+		if key.split("-")[0] in identification_set:
+			correct+=1
+			#print(value[3])
+
+print(len(eva.keys()))
+print(len(key_list))
+print("the accuracy for top{} is {}".format(topk,correct/len(key_list)))
+#print("the accuracy for top{} is {}".format(topk,correct/len(eva.keys())))
