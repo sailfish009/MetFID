@@ -82,7 +82,7 @@ model.add(Dense(400, activation='relu'))
 # model.add(Dropout(0.25))
 
 model.add(Dense(200, activation='relu'))
-model.add(Dense(528, activation='sigmoid'))#那我们的话，应该是就是把output的node的个数改一下。下面compile里的参数应该是不用改的。
+model.add(Dense(528, activation='sigmoid'))
 #185
 # -------------------------------------------------------- Compile Model ---------------------------------------------------------- 
 
